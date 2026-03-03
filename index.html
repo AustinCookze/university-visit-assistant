@@ -602,6 +602,8 @@
             document.getElementById('dashboard-page').style.display = 'none';
             document.getElementById('workflow-page').style.display = 'none';
             document.getElementById('history-page').style.display = 'none';
+            const settingsPage = document.getElementById('settings-page');
+            if (settingsPage) settingsPage.style.display = 'none';
         }
 
         function startNewVisit() {
@@ -1485,6 +1487,16 @@ ${searchContext}
         // 设置页面
         function showSettings() {
             hideAllPages();
+            
+            // 如果设置页面已存在，直接显示
+            let settingsPage = document.getElementById('settings-page');
+            if (settingsPage) {
+                settingsPage.style.display = 'block';
+                loadApiSettings();
+                return;
+            }
+            
+            // 否则创建新的设置页面
             const settingsHtml = `
                 <div id="settings-page" class="fade-in">
                     <div class="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto">
