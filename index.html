@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高校拜访智能助手 - 科大讯飞</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .step-active .step-circle { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .step-active .step-text { color: #667eea; font-weight: 600; }
+        .step-completed .step-circle { background: #10b981; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-message { max-width: 80%; }
+        .chat-user { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .chat-ai { background: #f3f4f6; color: #1f2937; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="gradient-bg text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-university text-2xl"></i>
+                    <span class="font-bold text-xl">高校拜访智能助手</span>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded hidden sm:inline">科大讯飞高教业务</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showDashboard()" class="hover:bg-white/20 px-3 py-2 rounded transition">
+                        <i class="fas fa-home mr-1"></i>首页
+                    </button>
+                    <button onclick="showHistory()" class="hover:bg-white/20 px-3 py-2 rounded transition">
+                        <i class="fas fa-history mr-1"></i>历史
+                    </button>
+                    <button onclick="showSettings()" class="hover:bg-white/20 px-3 py-2 rounded transition" title="API设置">
+                        <i class="fas fa-cog mr-1"></i>设置
+                    </button>
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- 仪表盘页面 -->
+        <div id="dashboard-page" class="fade-in">
+            <div class="text-center py-12">
+                <div class="w-24 h-24 gradient-bg rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-robot text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">高校拜访智能助手</h1>
+                <p class="text-gray-600 max-w-2xl mx-auto mb-8">
+                    基于AI技术，帮助您在拜访高校领导前完成情报搜集、领导画像分析与拜访策略制定，提升拜访成功率。
+                </p>
+                <button onclick="startNewVisit()" class="gradient-bg text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                    <i class="fas fa-plus mr-2"></i>新建拜访任务
+                </button>
+            </div>
+
+            <!-- 功能特点 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-search text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">智能情报搜集</h3>
+                    <p class="text-gray-600 text-sm">自动搜集学校基本信息、学科建设、信息化现状、近期动态等关键情报</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-user-tie text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">领导画像分析</h3>
+                    <p class="text-gray-600 text-sm">深度分析领导背景、管理风格、关注点，生成个性化沟通策略</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-chess text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">拜访策略生成</h3>
+                    <p class="text-gray-600 text-sm">基于拜访目标，生成开场白、话题路径、价值呈现方案与应对预案</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步骤流程页面 -->
+        <div id="workflow-page" style="display:none;">
+            <!-- 步骤指示器 -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between max-w-4xl mx-auto">
+                    <div class="step-item step-active flex flex-col items-center" data-step="1" id="step-indicator-1">
+                        <div class="step-circle w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center font-bold transition">1</div>
+                        <span class="step-text mt-2 text-sm text-gray-700">录入信息</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2" id="line-1"></div>
+                    <div class="step-item flex flex-col items-center" data-step="2" id="step-indicator-2">
+                        <div class="step-circle w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold transition">2</div>
+                        <span class="step-text mt-2 text-sm text-gray-500">情报搜集</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2" id="line-2"></div>
+                    <div class="step-item flex flex-col items-center" data-step="3" id="step-indicator-3">
+                        <div class="step-circle w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold transition">3</div>
+                        <span class="step-text mt-2 text-sm text-gray-500">领导画像</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2" id="line-3"></div>
+                    <div class="step-item flex flex-col items-center" data-step="4" id="step-indicator-4">
+                        <div class="step-circle w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold transition">4</div>
+                        <span class="step-text mt-2 text-sm text-gray-500">策略生成</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2" id="line-4"></div>
+                    <div class="step-item flex flex-col items-center" data-step="5" id="step-indicator-5">
+                        <div class="step-circle w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold transition">5</div>
+                        <span class="step-text mt-2 text-sm text-gray-500">模拟演练</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤1: 录入信息 -->
+            <div id="step-1" class="step-content fade-in">
+                <div class="bg-white rounded-xl shadow-sm p-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-clipboard-list text-indigo-600 mr-3"></i>
+                        录入拜访信息
+                    </h2>
+                    
+                    <form id="visitForm" class="space-y-6">
+                        <!-- 学校信息 -->
+                        <div class="border-l-4 border-indigo-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">学校信息</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">学校名称 *</label>
+                                    <input type="text" id="schoolName" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="如：清华大学">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">学校层次</label>
+                                    <select id="schoolLevel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">请选择</option>
+                                        <option value="985">985工程</option>
+                                        <option value="211">211工程</option>
+                                        <option value="double-first">双一流</option>
+                                        <option value="provincial">省属重点</option>
+                                        <option value="general">普通本科</option>
+                                        <option value="vocational">高职高专</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">所在省份</label>
+                                    <select id="province" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">请选择</option>
+                                        <option value="beijing">北京市</option>
+                                        <option value="tianjin">天津市</option>
+                                        <option value="hebei">河北省</option>
+                                        <option value="shanxi">山西省</option>
+                                        <option value="neimenggu">内蒙古自治区</option>
+                                        <option value="liaoning">辽宁省</option>
+                                        <option value="jilin">吉林省</option>
+                                        <option value="heilongjiang">黑龙江省</option>
+                                        <option value="shanghai">上海市</option>
+                                        <option value="jiangsu">江苏省</option>
+                                        <option value="zhejiang">浙江省</option>
+                                        <option value="anhui">安徽省</option>
+                                        <option value="fujian">福建省</option>
+                                        <option value="jiangxi">江西省</option>
+                                        <option value="shandong">山东省</option>
+                                        <option value="henan">河南省</option>
+                                        <option value="hubei">湖北省</option>
+                                        <option value="hunan">湖南省</option>
+                                        <option value="guangdong">广东省</option>
+                                        <option value="guangxi">广西壮族自治区</option>
+                                        <option value="hainan">海南省</option>
+                                        <option value="chongqing">重庆市</option>
+                                        <option value="sichuan">四川省</option>
+                                        <option value="guizhou">贵州省</option>
+                                        <option value="yunnan">云南省</option>
+                                        <option value="xizang">西藏自治区</option>
+                                        <option value="shaanxi">陕西省</option>
+                                        <option value="gansu">甘肃省</option>
+                                        <option value="qinghai">青海省</option>
+                                        <option value="ningxia">宁夏回族自治区</option>
+                                        <option value="xinjiang">新疆维吾尔自治区</option>
+                                        <option value="taiwan">台湾省</option>
+                                        <option value="xianggang">香港特别行政区</option>
+                                        <option value="aomen">澳门特别行政区</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">学校类型</label>
+                                    <select id="schoolType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">请选择</option>
+                                        <option value="comprehensive">综合</option>
+                                        <option value="science">理工</option>
+                                        <option value="normal">师范</option>
+                                        <option value="agriculture">农林</option>
+                                        <option value="medicine">医药</option>
+                                        <option value="finance">财经</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 领导信息 -->
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">领导信息</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">领导姓名 *</label>
+                                    <input type="text" id="leaderName" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="如：张三">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">领导职务 *</label>
+                                    <select id="leaderPosition" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" onchange="toggleCustomPosition()">
+                                        <option value="">请选择</option>
+                                        <option value="president">校长</option>
+                                        <option value="vp-academic">副校长（教学）</option>
+                                        <option value="vp-research">副校长（科研）</option>
+                                        <option value="dean-academic">教务处长</option>
+                                        <option value="it-director">信息中心主任</option>
+                                        <option value="other">其他（请填写）</option>
+                                    </select>
+                                    <input type="text" id="customPosition" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"
+                                        placeholder="选择"其他"后，在此输入具体职务名称"
+                                        style="display:none;"
+                                        oninput="updateLeaderPosition()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                                    <select id="leaderGender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">请选择</option>
+                                        <option value="male">男</option>
+                                        <option value="female">女</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">学术背景</label>
+                                    <input type="text" id="leaderBackground"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="如：计算机科学、教育学">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 拜访目标 -->
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">拜访目标</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">拜访目的 *</label>
+                                    <select id="visitGoal" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">请选择</option>
+                                        <option value="new-contract">新签约</option>
+                                        <option value="renewal">续费续约</option>
+                                        <option value="expansion">业务拓展</option>
+                                        <option value="relationship">关系维护</option>
+                                        <option value="problem-solving">问题解决</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">目标描述</label>
+                                    <textarea id="goalDescription" rows="3"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="请描述您的具体拜访目标，如：推进智慧校园项目签约、了解现有系统使用情况..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 已知信息 -->
+                        <div class="border-l-4 border-yellow-500 pl-4">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">已知信息（选填）</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">补充信息</label>
+                                <textarea id="knownInfo" rows="3"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="您已了解的关于学校或领导的任何信息..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4">
+                            <button type="button" onclick="saveAndNext()" 
+                                class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition">
+                                下一步：开始情报搜集 <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 步骤2: 情报搜集 -->
+            <div id="step-2" class="step-content" style="display:none;">
+                <div class="bg-white rounded-xl shadow-sm p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-search text-blue-600 mr-3"></i>
+                            情报搜集结果
+                        </h2>
+                        <button onclick="regenerateIntelligence()" class="text-indigo-600 hover:text-indigo-800">
+                            <i class="fas fa-sync-alt mr-1"></i>重新生成
+                        </button>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div id="intelligence-loading" class="text-center py-12">
+                        <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4 loading-pulse">
+                            <i class="fas fa-search text-2xl text-white"></i>
+                        </div>
+                        <p class="text-gray-600">正在搜集情报...</p>
+                        <p class="text-sm text-gray-500 mt-2">预计需要 10-20 秒</p>
+                    </div>
+
+                    <!-- 情报内容 -->
+                    <div id="intelligence-content" style="display:none;">
+                        <!-- 学校概况 -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-university text-blue-500 mr-2"></i>学校概况
+                            </h3>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2 text-sm text-blue-800">
+                                <i class="fas fa-info-circle mr-2"></i>以下信息标注了参考来源，点击链接可查看原始信息
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4" id="school-overview">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 学科建设 -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-graduation-cap text-green-500 mr-2"></i>学科建设
+                            </h3>
+                            <div class="bg-gray-50 rounded-lg p-4" id="discipline-info">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 信息化现状 -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-laptop-code text-purple-500 mr-2"></i>信息化现状
+                            </h3>
+                            <div class="bg-gray-50 rounded-lg p-4" id="it-status">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 近期动态 -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-newspaper text-orange-500 mr-2"></i>近期动态
+                            </h3>
+                            <div class="bg-gray-50 rounded-lg p-4" id="recent-news">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 领导履历 -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-user-tie text-indigo-500 mr-2"></i>领导履历
+                            </h3>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2 text-sm text-amber-800">
+                                <i class="fas fa-shield-alt mr-2"></i><strong>信息来源声明：</strong>以下信息仅包含公开可查的官方信息。如无参考链接标注，则表示暂无公开资料。
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4" id="leader-resume">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-4">
+                            <button onclick="prevStep()" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="fas fa-arrow-left mr-2"></i>上一步
+                            </button>
+                            <button onclick="nextStep()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition">
+                                下一步：领导画像 <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤3: 领导画像 -->
+            <div id="step-3" class="step-content" style="display:none;">
+                <div class="bg-white rounded-xl shadow-sm p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-user-circle text-purple-600 mr-3"></i>
+                        领导画像分析
+                    </h2>
+                    
+                    <!-- 重要声明 -->
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-red-800">重要声明</p>
+                                <p class="text-sm text-red-700 mt-1">
+                                    本工具仅基于公开可查的信息生成领导画像。所有分析结论均标注信息来源或可信度。
+                                    <strong>严禁仅凭此工具内容进行决策。</strong>拜访前请务必通过官方渠道核实领导信息。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 管理风格 -->
+                        <div class="bg-purple-50 rounded-xl p-6">
+                            <h3 class="font-bold text-purple-800 mb-3 flex items-center">
+                                <i class="fas fa-briefcase mr-2"></i>管理风格
+                            </h3>
+                            <div id="management-style" class="text-gray-700">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 决策特点 -->
+                        <div class="bg-blue-50 rounded-xl p-6">
+                            <h3 class="font-bold text-blue-800 mb-3 flex items-center">
+                                <i class="fas fa-balance-scale mr-2"></i>决策特点
+                            </h3>
+                            <div id="decision-style" class="text-gray-700">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 关注点预测 -->
+                        <div class="bg-green-50 rounded-xl p-6">
+                            <h3 class="font-bold text-green-800 mb-3 flex items-center">
+                                <i class="fas fa-bullseye mr-2"></i>关注点预测
+                            </h3>
+                            <div id="concern-points" class="text-gray-700">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+
+                        <!-- 沟通偏好 -->
+                        <div class="bg-orange-50 rounded-xl p-6">
+                            <h3 class="font-bold text-orange-800 mb-3 flex items-center">
+                                <i class="fas fa-comments mr-2"></i>沟通偏好
+                            </h3>
+                            <div id="communication-preference" class="text-gray-700">
+                                <!-- 动态填充 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between pt-6">
+                        <button onclick="prevStep()" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>上一步
+                        </button>
+                        <button onclick="nextStep()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition">
+                            下一步：策略生成 <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤4: 策略生成 -->
+            <div id="step-4" class="step-content" style="display:none;">
+                <div class="bg-white rounded-xl shadow-sm p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-chess-knight text-green-600 mr-3"></i>
+                        拜访策略方案
+                    </h2>
+
+                    <!-- 开场白建议 -->
+                    <div class="mb-6 border-l-4 border-indigo-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">开场白建议</h3>
+                        <div class="bg-indigo-50 rounded-lg p-4" id="opening-suggestion">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+
+                    <!-- 话题牵引路径 -->
+                    <div class="mb-6 border-l-4 border-purple-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">话题牵引路径</h3>
+                        <div class="bg-purple-50 rounded-lg p-4" id="topic-path">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+
+                    <!-- 价值呈现方案 -->
+                    <div class="mb-6 border-l-4 border-green-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">价值呈现方案</h3>
+                        <div class="bg-green-50 rounded-lg p-4" id="value-proposition">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+
+                    <!-- 可能问题与应对 -->
+                    <div class="mb-6 border-l-4 border-orange-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">可能的问题与应对</h3>
+                        <div class="bg-orange-50 rounded-lg p-4" id="qa-preparation">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+
+                    <!-- 下一步行动建议 -->
+                    <div class="mb-6 border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">下一步行动建议</h3>
+                        <div class="bg-blue-50 rounded-lg p-4" id="next-actions">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between pt-4">
+                        <button onclick="prevStep()" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>上一步
+                        </button>
+                        <button onclick="nextStep()" class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition">
+                            下一步：模拟演练 <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤5: 模拟演练 -->
+            <div id="step-5" class="step-content" style="display:none;">
+                <div class="bg-white rounded-xl shadow-sm p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-comments text-pink-600 mr-3"></i>
+                        模拟演练
+                    </h2>
+
+                    <div class="bg-gray-100 rounded-xl p-4 mb-6 h-96 overflow-y-auto" id="chat-container">
+                        <div class="chat-message chat-ai rounded-lg p-3 mb-3">
+                            <p class="font-semibold text-sm mb-1">AI领导</p>
+                            <p>你好，我是<span id="chat-leader-name"></span>。听说你想聊聊合作的事？</p>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <input type="text" id="chat-input" 
+                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            placeholder="输入你的回复..."
+                            onkeypress="if(event.key==='Enter') sendChatMessage()">
+                        <button onclick="sendChatMessage()" class="gradient-bg text-white px-6 py-3 rounded-lg font-semibold">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                    <div class="mt-6 flex justify-between">
+                        <button onclick="prevStep()" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>上一步
+                        </button>
+                        <button onclick="finishVisit()" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+                            <i class="fas fa-check mr-2"></i>完成拜访准备
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史记录页面 -->
+        <div id="history-page" style="display:none;" class="fade-in">
+            <div class="bg-white rounded-xl shadow-sm p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-history text-indigo-600 mr-3"></i>
+                    历史记录
+                </h2>
+                <div id="history-list" class="space-y-4">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 全局状态
+        let currentStep = 1;
+        let visitData = {};
+        let chatHistory = [];
+
+        // 页面切换
+        function showDashboard() {
+            hideAllPages();
+            document.getElementById('dashboard-page').style.display = 'block';
+        }
+
+        function showHistory() {
+            hideAllPages();
+            document.getElementById('history-page').style.display = 'block';
+            loadHistory();
+        }
+
+        function hideAllPages() {
+            document.getElementById('dashboard-page').style.display = 'none';
+            document.getElementById('workflow-page').style.display = 'none';
+            document.getElementById('history-page').style.display = 'none';
+        }
+
+        function startNewVisit() {
+            hideAllPages();
+            document.getElementById('workflow-page').style.display = 'block';
+            currentStep = 1;
+            updateStepIndicator();
+            showStep(1);
+        }
+
+        // 步骤管理
+        function updateStepIndicator() {
+            for (let i = 1; i <= 5; i++) {
+                const indicator = document.getElementById(`step-indicator-${i}`);
+                const circle = indicator.querySelector('.step-circle');
+                const text = indicator.querySelector('.step-text');
+                const line = document.getElementById(`line-${i}`);
+
+                if (i < currentStep) {
+                    indicator.classList.add('step-completed');
+                    indicator.classList.remove('step-active');
+                    circle.innerHTML = '<i class="fas fa-check"></i>';
+                    text.classList.remove('text-gray-500');
+                    text.classList.add('text-green-600');
+                    if (line) line.classList.add('bg-green-500');
+                } else if (i === currentStep) {
+                    indicator.classList.add('step-active');
+                    indicator.classList.remove('step-completed');
+                    circle.textContent = i;
+                    text.classList.remove('text-gray-500');
+                    text.classList.add('text-indigo-600');
+                } else {
+                    indicator.classList.remove('step-active', 'step-completed');
+                    circle.textContent = i;
+                    text.classList.add('text-gray-500');
+                    text.classList.remove('text-indigo-600', 'text-green-600');
+                }
+            }
+        }
+
+        function showStep(step) {
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`step-${i}`).style.display = i === step ? 'block' : 'none';
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < 5) {
+                currentStep++;
+                updateStepIndicator();
+                showStep(currentStep);
+                
+                if (currentStep === 2) {
+                    generateIntelligence();
+                } else if (currentStep === 3) {
+                    generateLeaderProfile();
+                } else if (currentStep === 4) {
+                    generateStrategy();
+                } else if (currentStep === 5) {
+                    initChat();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepIndicator();
+                showStep(currentStep);
+            }
+        }
+
+        // 保存并下一步
+        function saveAndNext() {
+            const form = document.getElementById('visitForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // 获取职务值（处理自定义输入）
+            const positionSelect = document.getElementById('leaderPosition');
+            let positionValue = positionSelect.value;
+            let customPositionValue = '';
+            
+            if (positionValue === 'other') {
+                const customInput = document.getElementById('customPosition');
+                customPositionValue = customInput.value.trim();
+                if (!customPositionValue) {
+                    alert('请选择"其他"时输入具体职务名称');
+                    customInput.focus();
+                    return;
+                }
+                // 存储自定义值到 dataset
+                positionSelect.dataset.customValue = customPositionValue;
+            }
+
+            visitData = {
+                school: {
+                    name: document.getElementById('schoolName').value,
+                    level: document.getElementById('schoolLevel').value,
+                    province: document.getElementById('province').value,
+                    type: document.getElementById('schoolType').value
+                },
+                leader: {
+                    name: document.getElementById('leaderName').value,
+                    position: positionValue,
+                    customPosition: customPositionValue,
+                    gender: document.getElementById('leaderGender').value,
+                    background: document.getElementById('leaderBackground').value
+                },
+                goal: {
+                    type: document.getElementById('visitGoal').value,
+                    description: document.getElementById('goalDescription').value
+                },
+                knownInfo: document.getElementById('knownInfo').value,
+                timestamp: new Date().toISOString()
+            };
+
+            nextStep();
+        }
+
+        // 生成情报（强制使用API）
+        async function generateIntelligence() {
+            document.getElementById('intelligence-loading').style.display = 'block';
+            document.getElementById('intelligence-content').style.display = 'none';
+
+            const schoolName = visitData.school.name;
+            const leaderName = visitData.leader.name;
+            const settings = getApiSettings();
+
+            if (!settings.key) {
+                showApiRequiredMessage('intelligence');
+                return;
+            }
+
+            const prompt = `请基于公开可查的信息，搜集并整理关于"${schoolName}"的客观信息。
+
+【严格禁止】
+- 严禁臆造任何信息，特别是关于"${leaderName}"的个人信息
+- 严禁编造学校数据、排名、成就
+- 严禁编造领导履历、学术成果、管理风格
+
+【信息来源要求】
+1. 每个信息点必须标注可验证的来源
+2. 优先使用：学校官网、教育部官网、官方新闻稿、权威媒体报道
+3. 来源格式：[来源: 网站名称/URL/日期]
+4. 无法确认的信息必须标注"[来源: 暂无公开信息]"
+
+【需要搜集的内容】
+1. 学校概况（层次、类型、地理位置、办学规模）- 必须标注来源链接
+2. 学科建设情况（优势学科、特色专业）- 必须标注来源链接
+3. 信息化现状（智慧校园建设、已有系统）- 必须标注来源链接
+4. 近期重要动态（新闻、政策、项目）- 必须标注来源链接及时间
+5. 关于"${leaderName}"的公开履历 - 只提供官网公开的信息，附来源链接
+
+【输出格式】
+请以HTML格式返回，每个部分用<h4>标题</h4>和<p>段落</p>组织。
+来源链接用 <a href="URL" target="_blank" class="text-blue-600 hover:underline">[来源: 名称]</a> 格式标注。
+如果无法找到来源，明确说明"暂无公开信息"。`;
+
+            const result = await callLLM(prompt, '你是一个严谨的高校信息研究员。你的铁律是：没有来源的信息绝不输出。对于任何无法验证的信息，必须明确标注"暂无公开信息"。你绝不会为了回答完整而编造任何内容。');
+            
+            if (result) {
+                document.getElementById('school-overview').innerHTML = extractSection(result, '学校概况') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('discipline-info').innerHTML = extractSection(result, '学科建设') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('it-status').innerHTML = extractSection(result, '信息化') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('recent-news').innerHTML = extractSection(result, '近期') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('leader-resume').innerHTML = extractSection(result, '领导') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('intelligence-loading').style.display = 'none';
+                document.getElementById('intelligence-content').style.display = 'block';
+            } else {
+                showApiErrorMessage('intelligence', '情报搜集失败，请检查API配置或稍后重试');
+            }
+        }
+
+        // 显示需要API Key的提示
+        function showApiRequiredMessage(section) {
+            const container = document.getElementById(section + '-loading') || document.getElementById('intelligence-loading');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-key text-2xl text-amber-600"></i>
+                        </div>
+                        <p class="text-gray-800 font-medium mb-2">需要使用大模型API</p>
+                        <p class="text-sm text-gray-600 mb-4">请配置API Key以生成真实情报</p>
+                        <button onclick="showSettings()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-cog mr-2"></i>去配置API
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示API错误提示
+        function showApiErrorMessage(section, message) {
+            const container = document.getElementById(section + '-loading') || document.getElementById('intelligence-loading');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                        </div>
+                        <p class="text-gray-800 font-medium mb-2">${message}</p>
+                        <button onclick="showSettings()" class="text-indigo-600 hover:text-indigo-800 mt-2">
+                            <i class="fas fa-cog mr-1"></i>检查API配置
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function extractSection(html, keyword) {
+            const regex = new RegExp(`<h4[^>]*>.*?${keyword}.*?</h4>\\s*<p>(.*?)</p>`, 'i');
+            const match = html.match(regex);
+            return match ? `<p>${match[1]}</p>` : null;
+        }
+
+        function regenerateIntelligence() {
+            generateIntelligence();
+        }
+
+        // 生成领导画像（支持API）
+        async function generateLeaderProfile() {
+            const settings = getApiSettings();
+            
+            if (settings.key) {
+                const prompt = `基于以下信息，分析这位高校领导的管理风格、决策特点、关注点和沟通偏好。
+
+【铁律 - 绝对禁止】
+- 严禁臆造领导的任何个人信息（学历、籍贯、家庭、爱好等）
+- 严禁编造领导的管理风格、决策案例、个人言论
+- 严禁编造领导的学术成果、研究方向细节
+
+【信息来源要求】
+1. 只使用公开可查的信息进行分析
+2. 每个分析结论必须说明是基于什么公开信息得出的
+3. 来源格式：[来源: 网站名称/URL/日期]
+4. 无法验证的信息必须标注"[基于一般性规律推测，无公开信息佐证]"
+
+学校：${visitData.school.name}
+领导姓名：${visitData.leader.name}
+职务：${getPositionText(visitData.leader.position)}
+学术背景：${visitData.leader.background || '未提供'}
+拜访目标：${getGoalText(visitData.goal.type)}
+
+请从以下四个维度进行分析，每个维度必须标注信息来源或可信度：
+1. 管理风格（基于职务和公开报道，附来源链接）
+2. 决策特点（基于学校类型和公开决策记录，附来源链接）
+3. 关注点预测（基于当前高校热点和其职务，附来源链接）
+4. 沟通偏好（基于一般性规律，必须标注为"推测"）
+
+【输出格式】
+返回HTML格式，每个部分用<h4>标题</h4>和具体内容。
+来源链接用 <a href="URL" target="_blank" class="text-blue-600 hover:underline">[来源: 名称]</a> 格式标注。
+对于任何无法验证的信息，明确说明"暂无公开信息"或"基于推测"。`;
+
+                const result = await callLLM(prompt, '你是一个专业的高校管理研究者。你的核心原则是：没有来源的信息绝不输出。你宁可回答"信息不足无法分析"，也绝不会为了回答完整而编造任何内容。对于推测性内容，你会明确标注。');
+                
+                if (result) {
+                    document.getElementById('management-style').innerHTML = extractSection(result, '管理风格') || '<p class="text-gray-500">暂无公开信息</p>';
+                    document.getElementById('decision-style').innerHTML = extractSection(result, '决策特点') || '<p class="text-gray-500">暂无公开信息</p>';
+                    document.getElementById('concern-points').innerHTML = extractSection(result, '关注点') || '<p class="text-gray-500">暂无公开信息</p>';
+                    document.getElementById('communication-preference').innerHTML = extractSection(result, '沟通偏好') || '<p class="text-gray-500">暂无公开信息</p>';
+                    return;
+                } else {
+                    showApiErrorMessage('leader-profile', '领导画像分析失败，请检查API配置');
+                    return;
+                }
+            }
+            
+            showApiRequiredMessage('leader-profile');
+        }
+
+        // 生成策略（支持API）
+        async function generateStrategy() {
+            const settings = getApiSettings();
+            const goalType = visitData.goal.type;
+            const goalText = getGoalText(goalType);
+
+            if (settings.key) {
+                const prompt = `请为以下高校拜访制定详细的拜访策略：
+
+学校：${visitData.school.name}
+领导：${visitData.leader.name}（${getPositionText(visitData.leader.position)}）
+拜访目标：${goalText}
+目标描述：${visitData.goal.description || '无'}
+
+请提供以下内容：
+1. 开场白建议（自然、得体的开场方式）
+2. 话题牵引路径（从开场到核心话题的推进步骤）
+3. 价值呈现方案（突出科大讯飞解决方案的核心价值点）
+4. 可能的问题与应对（至少3个常见异议及回应）
+5. 下一步行动建议（会后的跟进计划）
+
+返回格式为HTML，每个部分用<h4>标题</h4>和具体内容。`;
+
+                const result = await callLLM(prompt, '你是一个资深的B2B销售专家，擅长制定高校客户拜访策略。');
+                
+                if (result) {
+                    document.getElementById('opening-suggestion').innerHTML = extractSection(result, '开场白') || '<p class="text-gray-500">请重试生成</p>';
+                    document.getElementById('topic-path').innerHTML = extractSection(result, '话题牵引') || '<p class="text-gray-500">请重试生成</p>';
+                    document.getElementById('value-proposition').innerHTML = extractSection(result, '价值呈现') || '<p class="text-gray-500">请重试生成</p>';
+                    document.getElementById('qa-preparation').innerHTML = extractSection(result, '问题') || '<p class="text-gray-500">请重试生成</p>';
+                    document.getElementById('next-actions').innerHTML = extractSection(result, '下一步') || '<p class="text-gray-500">请重试生成</p>';
+                    return;
+                } else {
+                    showApiErrorMessage('strategy', '策略生成失败，请检查API配置');
+                    return;
+                }
+            }
+            
+            showApiRequiredMessage('strategy');
+        }
+
+        // 初始化聊天
+        function initChat() {
+            document.getElementById('chat-leader-name').textContent = visitData.leader.name + (visitData.leader.position === 'president' ? '校长' : '');
+            chatHistory = [];
+        }
+
+        // 发送聊天消息（支持API）
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            addChatMessage(message, 'user');
+            input.value = '';
+
+            const settings = getApiSettings();
+            
+            if (settings.key) {
+                // 使用真实API扮演领导
+                const context = `你正在扮演一位高校领导，与科大讯飞销售进行对话。
+
+你的角色设定：
+- 姓名：${visitData.leader.name}
+- 职务：${getPositionText(visitData.leader.position)}
+- 学校：${visitData.school.name}
+- 性格：务实、关注ROI、对新技术持谨慎开放态度
+
+对话场景：${getGoalText(visitData.goal.type)}
+
+请根据以上设定，以这位领导的口吻回复。回复要简洁、符合领导身份，可以提出质疑、询问细节或表达兴趣。`;
+
+                const result = await callLLM(message, context);
+                if (result) {
+                    addChatMessage(result, 'ai');
+                    return;
+                }
+            }
+
+            // 没有API Key，显示提示
+            addChatMessage('【系统提示】模拟演练功能需要配置API Key才能使用。请点击右上角"设置"配置Kimi API Key。', 'ai');
+        }
+
+        function addChatMessage(message, type) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.className = `chat-message ${type === 'user' ? 'chat-user ml-auto' : 'chat-ai'} rounded-lg p-3 mb-3`;
+            div.innerHTML = `
+                <p class="font-semibold text-sm mb-1">${type === 'user' ? '我' : 'AI领导'}</p>
+                <p>${message}</p>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 完成拜访
+        function finishVisit() {
+            // 保存到本地存储
+            const history = JSON.parse(localStorage.getItem('visitHistory') || '[]');
+            history.unshift({
+                ...visitData,
+                id: Date.now()
+            });
+            localStorage.setItem('visitHistory', JSON.stringify(history.slice(0, 50)));
+
+            alert('拜访准备已完成！所有信息已保存到历史记录。');
+            showDashboard();
+        }
+
+        // 加载历史记录
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('visitHistory') || '[]');
+            const container = document.getElementById('history-list');
+
+            if (history.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无历史记录</p>';
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-gray-800">${item.school.name} - ${item.leader.name}</h3>
+                            <p class="text-sm text-gray-600 mt-1">
+                                ${getGoalText(item.goal.type)} | ${new Date(item.timestamp).toLocaleDateString()}
+                            </p>
+                        </div>
+                        <button onclick="loadVisit(${item.id})" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                            查看详情
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadVisit(id) {
+            // 加载历史记录功能（可扩展）
+            alert('查看详情功能开发中...');
+        }
+
+        // 辅助函数
+        function getLevelText(level) {
+            const map = {
+                '985': '985工程',
+                '211': '211工程',
+                'double-first': '双一流',
+                'provincial': '省属重点',
+                'general': '普通本科',
+                'vocational': '高职高专'
+            };
+            return map[level] || '';
+        }
+
+        function getProvinceText(province) {
+            const map = {
+                'beijing': '北京市',
+                'tianjin': '天津市',
+                'hebei': '河北省',
+                'shanxi': '山西省',
+                'neimenggu': '内蒙古自治区',
+                'liaoning': '辽宁省',
+                'jilin': '吉林省',
+                'heilongjiang': '黑龙江省',
+                'shanghai': '上海市',
+                'jiangsu': '江苏省',
+                'zhejiang': '浙江省',
+                'anhui': '安徽省',
+                'fujian': '福建省',
+                'jiangxi': '江西省',
+                'shandong': '山东省',
+                'henan': '河南省',
+                'hubei': '湖北省',
+                'hunan': '湖南省',
+                'guangdong': '广东省',
+                'guangxi': '广西壮族自治区',
+                'hainan': '海南省',
+                'chongqing': '重庆市',
+                'sichuan': '四川省',
+                'guizhou': '贵州省',
+                'yunnan': '云南省',
+                'xizang': '西藏自治区',
+                'shaanxi': '陕西省',
+                'gansu': '甘肃省',
+                'qinghai': '青海省',
+                'ningxia': '宁夏回族自治区',
+                'xinjiang': '新疆维吾尔自治区',
+                'taiwan': '台湾省',
+                'xianggang': '香港特别行政区',
+                'aomen': '澳门特别行政区'
+            };
+            return map[province] || '';
+        }
+
+        function getTypeText(type) {
+            const map = {
+                'comprehensive': '综合',
+                'science': '理工',
+                'normal': '师范',
+                'agriculture': '农林',
+                'medicine': '医药',
+                'finance': '财经'
+            };
+            return map[type] || '';
+        }
+
+        function getPositionText(position) {
+            // 优先使用 visitData 中存储的自定义职务
+            if (position === 'other' && visitData.leader && visitData.leader.customPosition) {
+                return visitData.leader.customPosition;
+            }
+            // 兼容旧逻辑：从 select 元素获取
+            const select = document.getElementById('leaderPosition');
+            if (position === 'other' && select && select.dataset.customValue) {
+                return select.dataset.customValue;
+            }
+            const map = {
+                'president': '校长',
+                'vp-academic': '副校长（教学）',
+                'vp-research': '副校长（科研）',
+                'dean-academic': '教务处长',
+                'it-director': '信息中心主任',
+                'other': '其他职务'
+            };
+            return map[position] || '';
+        }
+
+        function toggleCustomPosition() {
+            const select = document.getElementById('leaderPosition');
+            const customInput = document.getElementById('customPosition');
+            if (select && customInput) {
+                if (select.value === 'other') {
+                    customInput.style.display = 'block';
+                    customInput.required = true;
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                    customInput.required = false;
+                    customInput.value = '';
+                    delete select.dataset.customValue;
+                }
+            }
+        }
+
+        function updateLeaderPosition() {
+            const customInput = document.getElementById('customPosition');
+            const select = document.getElementById('leaderPosition');
+            if (select && customInput && select.value === 'other') {
+                if (customInput.value.trim()) {
+                    select.dataset.customValue = customInput.value.trim();
+                } else {
+                    delete select.dataset.customValue;
+                }
+            }
+        }
+
+        function getGoalText(goal) {
+            const map = {
+                'new-contract': '新签约',
+                'renewal': '续费续约',
+                'expansion': '业务拓展',
+                'relationship': '关系维护',
+                'problem-solving': '问题解决'
+            };
+            return map[goal] || '业务交流';
+        }
+
+        // 设置页面
+        function showSettings() {
+            hideAllPages();
+            const settingsHtml = `
+                <div id="settings-page" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-8 max-w-2xl mx-auto">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-cog text-indigo-600 mr-3"></i>
+                            API 设置
+                        </h2>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p class="text-sm text-blue-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    配置大模型 API Key 后，系统将使用真实 AI 能力生成情报和策略，而非模拟数据。
+                                </p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">选择 API 提供商</label>
+                                <select id="apiProvider" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" onchange="updateApiEndpoint()">
+                                    <option value="kimi">Kimi (Moonshot)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">API Endpoint</label>
+                                <input type="text" id="apiEndpoint" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="https://api.moonshot.cn/v1/chat/completions"
+                                    value="https://api.moonshot.cn/v1/chat/completions">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">API Key *</label>
+                                <input type="password" id="apiKey" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="sk-xxxxxxxxxxxxxxxx"
+                                    value="sk-1gVvA381Zkv6ACbAmNuiRQRGpTah53YyJbshYe5Wu3QJKqgF">
+                                <p class="text-xs text-gray-500 mt-1">您的 API Key 仅存储在本地浏览器中，不会上传到任何服务器。</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">模型名称</label>
+                                <input type="text" id="modelName" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="kimi-latest"
+                                    value="kimi-latest">
+                            </div>
+
+                            <div class="flex items-center justify-between pt-4">
+                                <button onclick="testApiConnection()" class="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
+                                    <i class="fas fa-plug mr-2"></i>测试连接
+                                </button>
+                                <div class="space-x-3">
+                                    <button onclick="showDashboard()" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                        取消
+                                    </button>
+                                    <button onclick="saveApiSettings()" class="gradient-bg text-white px-6 py-2 rounded-lg hover:shadow-lg transition">
+                                        <i class="fas fa-save mr-2"></i>保存设置
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="apiTestResult" class="hidden mt-4 p-4 rounded-lg"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.querySelector('main').insertAdjacentHTML('beforeend', settingsHtml);
+            loadApiSettings();
+        }
+
+        function updateApiEndpoint() {
+            const provider = document.getElementById('apiProvider').value;
+            const endpointInput = document.getElementById('apiEndpoint');
+            const modelInput = document.getElementById('modelName');
+            
+            const defaults = {
+                'kimi': { endpoint: 'https://api.moonshot.cn/v1/chat/completions', model: 'kimi-latest' },
+                'openai': { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4' },
+                'custom': { endpoint: '', model: '' }
+            };
+            
+            if (defaults[provider]) {
+                endpointInput.value = defaults[provider].endpoint;
+                modelInput.value = defaults[provider].model;
+            }
+        }
+
+        function saveApiSettings() {
+            const settings = {
+                provider: document.getElementById('apiProvider').value,
+                endpoint: document.getElementById('apiEndpoint').value,
+                key: document.getElementById('apiKey').value,
+                model: document.getElementById('modelName').value
+            };
+            
+            if (!settings.key) {
+                alert('请输入 API Key');
+                return;
+            }
+            
+            localStorage.setItem('apiSettings', JSON.stringify(settings));
+            alert('设置已保存！');
+            showDashboard();
+        }
+
+        function loadApiSettings() {
+            const settings = JSON.parse(localStorage.getItem('apiSettings') || '{}');
+            if (settings.provider) document.getElementById('apiProvider').value = settings.provider;
+            if (settings.endpoint) document.getElementById('apiEndpoint').value = settings.endpoint;
+            if (settings.key) document.getElementById('apiKey').value = settings.key;
+            if (settings.model) document.getElementById('modelName').value = settings.model;
+        }
+
+        function getApiSettings() {
+            return JSON.parse(localStorage.getItem('apiSettings') || '{}');
+        }
+
+        async function testApiConnection() {
+            const resultDiv = document.getElementById('apiTestResult');
+            const settings = {
+                endpoint: document.getElementById('apiEndpoint').value,
+                key: document.getElementById('apiKey').value,
+                model: document.getElementById('modelName').value
+            };
+            
+            if (!settings.key) {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 text-red-800';
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>请先输入 API Key';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+
+            resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 text-blue-800';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>正在测试连接...';
+            resultDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(settings.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${settings.key}`
+                    },
+                    body: JSON.stringify({
+                        model: settings.model,
+                        messages: [{ role: 'user', content: '你好' }],
+                        max_tokens: 10
+                    })
+                });
+
+                if (response.ok) {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 text-green-800';
+                    resultDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>连接成功！API 配置正确。';
+                } else {
+                    const error = await response.json();
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 text-red-800';
+                    resultDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>连接失败：${error.error?.message || response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 text-red-800';
+                resultDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>连接失败：${error.message}`;
+            }
+        }
+
+        // 调用大模型 API
+        async function callLLM(prompt, systemPrompt = '') {
+            const settings = getApiSettings();
+            if (!settings.key) {
+                return null;
+            }
+
+            try {
+                const response = await fetch(settings.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${settings.key}`
+                    },
+                    body: JSON.stringify({
+                        model: settings.model,
+                        messages: [
+                            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                }
+            } catch (error) {
+                console.error('API call failed:', error);
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>
