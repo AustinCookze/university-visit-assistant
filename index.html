@@ -1195,7 +1195,7 @@
                                 <input type="text" id="modelName" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="moonshot-v1-8k"
-                                    value="moonshot-v1-8k">
+                                    value="moonshot-v1-128k">
                             </div>
 
                             <div class="flex items-center justify-between pt-4">
@@ -1265,6 +1265,22 @@
         }
 
         function getApiSettings() {
+            // 优先从页面输入框读取（支持预置值和用户修改）
+            const provider = document.getElementById('apiProvider');
+            const endpoint = document.getElementById('apiEndpoint');
+            const key = document.getElementById('apiKey');
+            const model = document.getElementById('modelName');
+            
+            if (provider && endpoint && key && model) {
+                return {
+                    provider: provider.value,
+                    endpoint: endpoint.value,
+                    key: key.value,
+                    model: model.value
+                };
+            }
+            
+            // 回退到 localStorage
             return JSON.parse(localStorage.getItem('apiSettings') || '{}');
         }
 
