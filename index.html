@@ -904,87 +904,6 @@ ${searchContext}
             );
             
             if (!result) {
-                showApiErrorMessage('intelligence', '情报搜集失败，请检查API配置或稍后重试', 'generateIntelligence');
-            }
-        }                `${schoolName} 信息化 智慧校园 招标`,
-                `${schoolName} 近期新闻 2024`,
-                `${leaderName} 公开讲话 活动`,
-                `${schoolName} ${visitGoal} 合作`
-            ];
-
-            let allSearchResults = [];
-            for (let i = 0; i < searchQueries.length; i++) {
-                document.getElementById('search-status').textContent = `搜索: ${searchQueries[i]}...`;
-                const results = await searchWeb(searchQueries[i]);
-                allSearchResults = allSearchResults.concat(results);
-                // 延迟避免请求过快
-                if (i < searchQueries.length - 1) await new Promise(r => setTimeout(r, 1000));
-            }
-
-            // 格式化搜索结果
-            const searchContext = allSearchResults.slice(0, 15).map(r => 
-                `[${r.title}]\n${r.description}\n来源: ${r.link}`
-            ).join('\n\n');
-
-            document.getElementById('search-status').textContent = '正在分析搜索结果...';
-
-            const prompt = `基于以下实时搜索到的信息，整理关于"${schoolName}"和"${leaderName}"的客观情报。
-
-【实时搜索结果】
-${searchContext}
-
-【拜访背景】
-- 拜访对象：${leaderName}（${leaderPosition}）
-- 拜访目标：${visitGoal}
-- 目标描述：${goalDesc}
-
-【信息整理维度】
-
-1. 学校基础概况
-   - 学校层次、类型、隶属关系
-   - 地理位置、校区分布
-   - 办学规模（师生人数、学院数量）
-   - 历史沿革、办学特色
-
-2. 学科建设情况
-   - 双一流建设学科
-   - 国家重点学科、特色专业
-   - 与科大讯飞业务相关的学科
-
-3. 信息化现状
-   - 智慧校园建设情况
-   - 信息化建设招标信息
-   - 现有合作伙伴
-   - 存在的痛点和需求
-
-4. 近期重要动态
-   - 学校近期新闻（近6个月）
-   - 与${leaderName}相关的公开活动
-   - 与拜访目标相关的政策、项目、合作
-
-5. 领导履历与背景
-   - ${leaderName}的职务履历
-   - 学术背景、研究方向
-   - 公开的管理理念、讲话观点
-   - 近期参与的公开活动
-
-【来源标注要求】
-1. 每个信息点必须标注来源链接
-2. 来源格式：<a href="URL" target="_blank">[来源: 网站名称]</a>
-3. 基于搜索结果合理推断的内容标注"[推断: 基于xxx信息]"
-4. 无法确认的信息标注"[来源: 暂无公开信息]"
-
-【输出格式】
-以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
-重要信息加粗，来源链接紧跟信息点后。`;
-
-            const result = await callLLM(prompt, '你是一个专业的高校信息研究员。你擅长基于实时搜索到的信息整理情报，能够区分"已知事实"和"合理推断"，并严格标注信息来源。');
-            
-            if (result) {
-                document.getElementById('school-overview').innerHTML = extractSection(result, '学校基础概况') || extractSection(result, '学校概况') || '<p class="text-gray-500">暂无公开信息</p>';
-                document.getElementById('discipline-info').innerHTML = extractSection(result, '学科建设') || '<p class="text-gray-500">暂无公开信息</p>';
-                document.getElementById('it-status').innerHTML = extractSection(result, '信息化') || '<p class="text-gray-500">暂无公开信息</p>';
-                document.getElementById('recent-news').innerHTML = extractSection(result, '近期') || '<p class="text-gray-500">暂无公开信息</p>';
                 document.getElementById('leader-resume').innerHTML = extractSection(result, '领导') || '<p class="text-gray-500">暂无公开信息</p>';
                 document.getElementById('intelligence-loading').style.display = 'none';
                 document.getElementById('intelligence-content').style.display = 'block';
@@ -1141,8 +1060,8 @@ ${searchContext}
 5. 沟通偏好`;
 
                 // 移除搜索状态，初始化内容区域
-                const statusDiv = document.getElementById('leader-search-status');
-                if (statusDiv) statusDiv.remove();
+                const searchStatusDiv = document.getElementById('leader-search-status');
+                if (searchStatusDiv) searchStatusDiv.remove();
 
                 // 初始化各区域
                 document.getElementById('management-style').innerHTML = '<div class="text-gray-400">正在生成...</div>';
@@ -1181,12 +1100,6 @@ ${searchContext}
                 
                 if (!result) {
                     showApiErrorMessage('leader-profile', '领导画像分析失败，请检查API配置', 'generateLeaderProfile');
-                }
-            }
-            
-            showApiRequiredMessage('leader-profile');
-        }领导画像分析失败，请检查API配置', 'generateLeaderProfile');
-                    return;
                 }
             }
             
@@ -1330,35 +1243,8 @@ ${searchContext}
             if (!result) {
                 showApiErrorMessage('strategy', '策略生成失败，请检查API配置', 'generateStrategy');
             }
-        }拜访目标设计后续跟进计划
-   - 关键时间节点和里程碑
-   - 需要的内部资源和配合
-
-【输出要求】
-- 策略要具体、可执行，不要泛泛而谈
-- 结合前面搜集到的具体信息
-- 标注需要进一步确认的信息点
-- 以HTML格式返回，每个部分用<h4>标题</h4>`;
-
-                const result = await callLLM(prompt, '你是一个资深的高校客户销售专家。你擅长基于客户情报制定针对性的拜访策略，能够结合客户的具体情况设计话术和应对方案。你的策略具体、可执行，不是模板化的内容。');
-                
-                if (result) {
-                    document.getElementById('opening-suggestion').innerHTML = extractSection(result, '开场白') || '<p class="text-gray-500">请重试生成</p>';
-                    document.getElementById('topic-path').innerHTML = extractSection(result, '话题牵引') || '<p class="text-gray-500">请重试生成</p>';
-                    document.getElementById('value-proposition').innerHTML = extractSection(result, '价值呈现') || '<p class="text-gray-500">请重试生成</p>';
-                    document.getElementById('qa-preparation').innerHTML = extractSection(result, '问题') || '<p class="text-gray-500">请重试生成</p>';
-                    document.getElementById('next-actions').innerHTML = extractSection(result, '下一步') || '<p class="text-gray-500">请重试生成</p>';
-                    return;
-                } else {
-                    showApiErrorMessage('strategy', '策略生成失败，请检查API配置', 'generateStrategy');
-                    return;
-                }
-            }
-            
-            showApiRequiredMessage('strategy');
         }
 
-        // 初始化聊天
         function initChat() {
             document.getElementById('chat-leader-name').textContent = visitData.leader.name + (visitData.leader.position === 'president' ? '校长' : '');
             chatHistory = [];
