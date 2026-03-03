@@ -754,10 +754,13 @@
             return [];
         }
 
-        // 生成情报（强制使用API，带搜索）
+        // 生成情报（强制使用API，带搜索和流式输出）
         async function generateIntelligence() {
-            document.getElementById('intelligence-loading').style.display = 'block';
-            document.getElementById('intelligence-content').style.display = 'none';
+            const loadingContainer = document.getElementById('intelligence-loading');
+            const contentContainer = document.getElementById('intelligence-content');
+            
+            loadingContainer.style.display = 'block';
+            contentContainer.style.display = 'none';
 
             const schoolName = visitData.school.name;
             const leaderName = visitData.leader.name;
@@ -771,22 +774,139 @@
                 return;
             }
 
-            // 显示搜索进度
-            const loadingContainer = document.getElementById('intelligence-loading');
-            loadingContainer.innerHTML = `
-                <div class="text-center py-8">
-                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4 loading-pulse">
-                        <i class="fas fa-search text-2xl text-white"></i>
-                    </div>
-                    <p class="text-gray-600 mb-2">正在搜索相关信息...</p>
-                    <div class="text-sm text-gray-500" id="search-status">准备搜索</div>
-                </div>
-            `;
-
-            // 执行多个搜索
+            // 阶段1: 搜索 (0-30%)
+            showProgress(loadingContainer, 10, '正在搜索学校信息...');
+            
             const searchQueries = [
                 `${schoolName} ${leaderName} ${leaderPosition} 履历`,
                 `${schoolName} 信息化 智慧校园 招标`,
+                `${schoolName} 近期新闻 2024`,
+                `${leaderName} 公开讲话 观点`,
+                `${schoolName} ${visitGoal} 合作`
+            ];
+
+            let allSearchResults = [];
+            for (let i = 0; i < searchQueries.length; i++) {
+                showProgress(loadingContainer, 10 + (i + 1) * 4, `搜索: ${searchQueries[i]}...`);
+                const results = await searchWeb(searchQueries[i]);
+                allSearchResults = allSearchResults.concat(results);
+                if (i < searchQueries.length - 1) await new Promise(r => setTimeout(r, 800));
+            }
+
+            // 格式化搜索结果
+            const searchContext = allSearchResults.slice(0, 15).map(r => 
+                `[${r.title}]\n${r.description}\n来源: ${r.link}`
+            ).join('\n\n');
+
+            // 阶段2: 分析生成 (30-100%)
+            showProgress(loadingContainer, 30, '正在分析搜索结果...');
+
+            // 显示内容区域，准备流式输出
+            loadingContainer.style.display = 'none';
+            contentContainer.style.display = 'block';
+            
+            // 初始化各区域
+            document.getElementById('school-overview').innerHTML = '<div class="text-gray-400">正在生成...</div>';
+            document.getElementById('discipline-info').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('it-status').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('recent-news').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('leader-resume').innerHTML = '<div class="text-gray-400">等待中...</div>';
+
+            const prompt = `基于以下实时搜索到的信息，整理关于"${schoolName}"和"${leaderName}"的客观情报。
+
+【实时搜索结果】
+${searchContext}
+
+【拜访背景】
+- 拜访对象：${leaderName}（${leaderPosition}）
+- 拜访目标：${visitGoal}
+- 目标描述：${goalDesc}
+
+【信息整理维度】
+
+1. 学校基础概况
+   - 学校层次、类型、隶属关系
+   - 地理位置、校区分布
+   - 办学规模（师生人数、学院数量）
+   - 历史沿革、办学特色
+
+2. 学科建设情况
+   - 双一流建设学科
+   - 国家重点学科、特色专业
+   - 与科大讯飞业务相关的学科
+
+3. 信息化现状
+   - 智慧校园建设情况
+   - 信息化建设招标信息
+   - 现有合作伙伴
+   - 存在的痛点和需求
+
+4. 近期重要动态
+   - 学校近期新闻（近6个月）
+   - 与${leaderName}相关的公开活动
+   - 与拜访目标相关的政策、项目、合作
+
+5. 领导履历与背景
+   - ${leaderName}的职务履历
+   - 学术背景、研究方向
+   - 公开的管理理念、讲话观点
+   - 近期参与的公开活动
+
+【来源标注要求】
+1. 每个信息点必须标注来源链接
+2. 来源格式：<a href="URL" target="_blank">[来源: 网站名称]</a>
+3. 基于搜索结果合理推断的内容标注"[推断: 基于xxx信息]"
+4. 无法确认的信息标注"[来源: 暂无公开信息]"
+
+【输出格式】
+以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
+重要信息加粗，来源链接紧跟信息点后。
+
+请按以下顺序输出：
+1. 学校基础概况
+2. 学科建设情况  
+3. 信息化现状
+4. 近期重要动态
+5. 领导履历与背景`;
+
+            let currentSection = '';
+            let sectionContent = '';
+            
+            const result = await callLLM(
+                prompt, 
+                '你是一个专业的高校信息研究员。你擅长基于实时搜索到的信息整理情报，能够区分"已知事实"和"合理推断"，并严格标注信息来源。',
+                (content) => {
+                    // 流式回调，实时更新显示
+                    const sections = content.split(/<h4[^>]*>/i);
+                    
+                    sections.forEach((section, index) => {
+                        if (index === 0) return; // 跳过第一个空部分
+                        
+                        const sectionMatch = section.match(/(.*?)<\/h4>([\s\S]*)/i);
+                        if (sectionMatch) {
+                            const title = sectionMatch[1].trim();
+                            const body = '<h4>' + sectionMatch[1] + '</h4>' + sectionMatch[2];
+                            
+                            if (title.includes('学校') || title.includes('概况')) {
+                                document.getElementById('school-overview').innerHTML = body;
+                            } else if (title.includes('学科')) {
+                                document.getElementById('discipline-info').innerHTML = body;
+                            } else if (title.includes('信息化')) {
+                                document.getElementById('it-status').innerHTML = body;
+                            } else if (title.includes('近期') || title.includes('动态')) {
+                                document.getElementById('recent-news').innerHTML = body;
+                            } else if (title.includes('领导') || title.includes('履历')) {
+                                document.getElementById('leader-resume').innerHTML = body;
+                            }
+                        }
+                    });
+                }
+            );
+            
+            if (!result) {
+                showApiErrorMessage('intelligence', '情报搜集失败，请检查API配置或稍后重试', 'generateIntelligence');
+            }
+        }                `${schoolName} 信息化 智慧校园 招标`,
                 `${schoolName} 近期新闻 2024`,
                 `${leaderName} 公开讲话 活动`,
                 `${schoolName} ${visitGoal} 合作`
@@ -1520,8 +1640,8 @@ ${searchContext}
             }
         }
 
-        // 调用大模型 API
-        async function callLLM(prompt, systemPrompt = '') {
+        // 调用大模型 API（支持流式输出）
+        async function callLLM(prompt, systemPrompt = '', onStream = null) {
             const settings = getApiSettings();
             if (!settings.key) {
                 return null;
@@ -1541,18 +1661,82 @@ ${searchContext}
                             { role: 'user', content: prompt }
                         ],
                         temperature: 0.7,
-                        max_tokens: 2000
+                        max_tokens: 2000,
+                        stream: !!onStream
                     })
                 });
 
-                if (response.ok) {
+                if (!response.ok) {
+                    return null;
+                }
+
+                // 如果不使用流式，直接返回完整内容
+                if (!onStream) {
                     const data = await response.json();
                     return data.choices[0].message.content;
                 }
+
+                // 流式处理
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullContent = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+                                const content = parsed.choices?.[0]?.delta?.content;
+                                if (content) {
+                                    fullContent += content;
+                                    onStream(fullContent);
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                return fullContent;
             } catch (error) {
                 console.error('API call failed:', error);
+                return null;
             }
-            return null;
+        }
+
+        // 显示进度条
+        function showProgress(container, percent, message) {
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-spinner fa-spin text-2xl text-white"></i>
+                    </div>
+                    <p class="text-gray-600 mb-2">${message}</p>
+                    <div class="w-64 h-2 bg-gray-200 rounded-full mx-auto overflow-hidden">
+                        <div class="h-full gradient-bg transition-all duration-300" style="width: ${percent}%"></div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">${percent}%</p>
+                </div>
+            `;
+        }
+
+        // 流式显示内容
+        function streamContent(containerId, content) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = content;
+                container.scrollTop = container.scrollHeight;
+            }
         }
     </script>
 </body>
