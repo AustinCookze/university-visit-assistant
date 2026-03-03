@@ -1131,18 +1131,61 @@ ${searchContext}
 
 【输出格式】
 以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
-重要结论加粗，来源链接紧跟结论后。`;
+重要结论加粗，来源链接紧跟结论后。
 
-                const result = await callLLM(prompt, '你是一个专业的高校管理研究者和情报分析专家。你擅长基于实时搜索到的公开信息进行深度分析，能够区分"已知事实"和"合理推断"，并严格标注信息来源。你不会编造信息，但会基于证据进行有依据的推测。');
+请按以下顺序输出：
+1. 职业履历与背景
+2. 管理风格分析
+3. 决策特点
+4. 关注点预测
+5. 沟通偏好`;
+
+                // 移除搜索状态，初始化内容区域
+                const statusDiv = document.getElementById('leader-search-status');
+                if (statusDiv) statusDiv.remove();
+
+                // 初始化各区域
+                document.getElementById('management-style').innerHTML = '<div class="text-gray-400">正在生成...</div>';
+                document.getElementById('decision-style').innerHTML = '<div class="text-gray-400">等待中...</div>';
+                document.getElementById('concern-points').innerHTML = '<div class="text-gray-400">等待中...</div>';
+                document.getElementById('communication-preference').innerHTML = '<div class="text-gray-400">等待中...</div>';
+
+                const result = await callLLM(
+                    prompt, 
+                    '你是一个专业的高校管理研究者和情报分析专家。你擅长基于实时搜索到的公开信息进行深度分析，能够区分"已知事实"和"合理推断"，并严格标注信息来源。你不会编造信息，但会基于证据进行有依据的推测。',
+                    (content) => {
+                        // 流式回调，实时更新显示
+                        const sections = content.split(/<h4[^>]*>/i);
+                        
+                        sections.forEach((section, index) => {
+                            if (index === 0) return;
+                            
+                            const sectionMatch = section.match(/(.*?)<\/h4>([\s\S]*)/i);
+                            if (sectionMatch) {
+                                const title = sectionMatch[1].trim();
+                                const body = '<h4>' + sectionMatch[1] + '</h4>' + sectionMatch[2];
+                                
+                                if (title.includes('管理风格') || title.includes('职业履历')) {
+                                    document.getElementById('management-style').innerHTML = body;
+                                } else if (title.includes('决策')) {
+                                    document.getElementById('decision-style').innerHTML = body;
+                                } else if (title.includes('关注')) {
+                                    document.getElementById('concern-points').innerHTML = body;
+                                } else if (title.includes('沟通')) {
+                                    document.getElementById('communication-preference').innerHTML = body;
+                                }
+                            }
+                        });
+                    }
+                );
                 
-                if (result) {
-                    document.getElementById('management-style').innerHTML = extractSection(result, '管理风格') || extractSection(result, '职业履历') || '<p class="text-gray-500">暂无公开信息</p>';
-                    document.getElementById('decision-style').innerHTML = extractSection(result, '决策特点') || '<p class="text-gray-500">暂无公开信息</p>';
-                    document.getElementById('concern-points').innerHTML = extractSection(result, '关注点') || '<p class="text-gray-500">暂无公开信息</p>';
-                    document.getElementById('communication-preference').innerHTML = extractSection(result, '沟通偏好') || '<p class="text-gray-500">暂无公开信息</p>';
-                    return;
-                } else {
+                if (!result) {
                     showApiErrorMessage('leader-profile', '领导画像分析失败，请检查API配置', 'generateLeaderProfile');
+                }
+            }
+            
+            showApiRequiredMessage('leader-profile');
+        }领导画像分析失败，请检查API配置', 'generateLeaderProfile');
                     return;
                 }
             }
@@ -1150,14 +1193,50 @@ ${searchContext}
             showApiRequiredMessage('leader-profile');
         }
 
-        // 生成策略（支持API）
+        // 生成策略（支持API，带流式输出）
         async function generateStrategy() {
             const settings = getApiSettings();
             const goalType = visitData.goal.type;
             const goalText = getGoalText(goalType);
 
-            if (settings.key) {
-                const prompt = `基于前面步骤搜集到的情报和领导画像，制定针对性的拜访策略。
+            if (!settings.key) {
+                showApiRequiredMessage('strategy');
+                return;
+            }
+
+            // 显示加载进度
+            const step4Container = document.getElementById('step-4');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'strategy-loading';
+            loadingDiv.className = 'bg-white rounded-xl shadow-sm p-8 mb-6';
+            loadingDiv.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chess-knight text-2xl text-white loading-pulse"></i>
+                    </div>
+                    <p class="text-gray-600 mb-2">正在制定拜访策略...</p>
+                    <div class="w-64 h-2 bg-gray-200 rounded-full mx-auto overflow-hidden">
+                        <div class="h-full gradient-bg transition-all duration-300" id="strategy-progress-bar" style="width: 10%"></div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2" id="strategy-progress-text">分析情报中...</p>
+                </div>
+            `;
+            step4Container.insertBefore(loadingDiv, step4Container.firstChild.nextSibling);
+
+            // 模拟进度更新
+            const updateProgress = (percent, message) => {
+                const bar = document.getElementById('strategy-progress-bar');
+                const text = document.getElementById('strategy-progress-text');
+                if (bar) bar.style.width = percent + '%';
+                if (text) text.textContent = message;
+            };
+
+            await new Promise(r => setTimeout(r, 500));
+            updateProgress(30, '分析领导画像...');
+            await new Promise(r => setTimeout(r, 500));
+            updateProgress(50, '设计话术策略...');
+
+            const prompt = `基于前面步骤搜集到的情报和领导画像，制定针对性的拜访策略。
 
 【拜访背景】
 学校：${visitData.school.name}
@@ -1189,6 +1268,69 @@ ${searchContext}
 
 5. 下一步行动建议
    - 根据拜访目标设计后续跟进计划
+   - 关键时间节点和里程碑
+   - 需要的内部资源和配合
+
+【输出要求】
+- 策略要具体、可执行，不要泛泛而谈
+- 结合前面搜集到的具体信息
+- 标注需要进一步确认的信息点
+- 以HTML格式返回，每个部分用<h4>标题</h4>
+
+请按以下顺序输出：
+1. 开场白建议
+2. 话题牵引路径
+3. 价值呈现方案
+4. 可能的问题与应对
+5. 下一步行动建议`;
+
+            updateProgress(70, '生成策略内容...');
+
+            // 移除加载界面
+            loadingDiv.remove();
+
+            // 初始化各区域
+            document.getElementById('opening-suggestion').innerHTML = '<div class="text-gray-400">正在生成...</div>';
+            document.getElementById('topic-path').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('value-proposition').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('qa-preparation').innerHTML = '<div class="text-gray-400">等待中...</div>';
+            document.getElementById('next-actions').innerHTML = '<div class="text-gray-400">等待中...</div>';
+
+            const result = await callLLM(
+                prompt, 
+                '你是一个资深的高校客户销售专家。你擅长基于客户情报制定针对性的拜访策略，能够结合客户的具体情况设计话术和应对方案。你的策略具体、可执行，不是模板化的内容。',
+                (content) => {
+                    // 流式回调，实时更新显示
+                    const sections = content.split(/<h4[^>]*>/i);
+                    
+                    sections.forEach((section, index) => {
+                        if (index === 0) return;
+                        
+                        const sectionMatch = section.match(/(.*?)<\/h4>([\s\S]*)/i);
+                        if (sectionMatch) {
+                            const title = sectionMatch[1].trim();
+                            const body = '<h4>' + sectionMatch[1] + '</h4>' + sectionMatch[2];
+                            
+                            if (title.includes('开场白')) {
+                                document.getElementById('opening-suggestion').innerHTML = body;
+                            } else if (title.includes('话题') || title.includes('牵引')) {
+                                document.getElementById('topic-path').innerHTML = body;
+                            } else if (title.includes('价值')) {
+                                document.getElementById('value-proposition').innerHTML = body;
+                            } else if (title.includes('问题') || title.includes('应对')) {
+                                document.getElementById('qa-preparation').innerHTML = body;
+                            } else if (title.includes('下一步') || title.includes('行动')) {
+                                document.getElementById('next-actions').innerHTML = body;
+                            }
+                        }
+                    });
+                }
+            );
+            
+            if (!result) {
+                showApiErrorMessage('strategy', '策略生成失败，请检查API配置', 'generateStrategy');
+            }
+        }拜访目标设计后续跟进计划
    - 关键时间节点和里程碑
    - 需要的内部资源和配合
 
