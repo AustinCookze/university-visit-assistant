@@ -731,6 +731,9 @@
 
             const schoolName = visitData.school.name;
             const leaderName = visitData.leader.name;
+            const leaderPosition = getPositionText(visitData.leader.position);
+            const visitGoal = getGoalText(visitData.goal.type);
+            const goalDesc = visitData.goal.description || '';
             const settings = getApiSettings();
 
             if (!settings.key) {
@@ -738,35 +741,69 @@
                 return;
             }
 
-            const prompt = `请基于公开可查的信息，搜集并整理关于"${schoolName}"的客观信息。
+            const prompt = `请基于公开可查的信息，全面搜集并整理关于"${schoolName}"的客观信息，特别关注与拜访目标相关的信息。
 
-【严格禁止】
-- 严禁臆造任何信息，特别是关于"${leaderName}"的个人信息
-- 严禁编造学校数据、排名、成就
-- 严禁编造领导履历、学术成果、管理风格
+【拜访背景】
+- 拜访对象：${leaderName}（${leaderPosition}）
+- 拜访目标：${visitGoal}
+- 目标描述：${goalDesc}
 
-【信息来源要求】
+【信息搜集维度】
+
+1. 学校基础概况
+   - 学校层次、类型、隶属关系
+   - 地理位置、校区分布
+   - 办学规模（师生人数、学院数量）
+   - 历史沿革、办学特色
+   - 近期发展规划
+
+2. 学科建设情况
+   - 双一流建设学科
+   - 国家重点学科、特色专业
+   - 学科评估结果
+   - 与科大讯飞业务相关的学科（如计算机、人工智能、教育技术）
+
+3. 信息化现状（重点搜集近1-2年信息）
+   - 智慧校园建设整体规划
+   - 已建成的信息化系统
+   - 近1年的信息化建设招标信息（中国政府采购网、学校采购网）
+   - 现有合作伙伴（已合作的科技企业）
+   - 信息化投入预算规模
+   - 存在的痛点和需求
+
+4. 近期重要动态（近6个月）
+   - 学校官网新闻中与信息化、教学、科研相关的动态
+   - 校领导公开讲话、会议报道
+   - 与${leaderName}相关的公开活动和讲话
+   - 与拜访目标相关的政策、项目、合作
+   - 学校近期重大事件（校庆、评估、合作签约等）
+
+5. 领导履历与背景（扩大搜索范围）
+   - ${leaderName}的职务履历
+   - 学术背景、研究方向
+   - 公开的管理理念、讲话观点
+   - 近期参与的公开活动
+   - 来源不限于官网，可包括：新闻报道、学术会议、行业论坛等
+
+【推断与结论】
+- 基于搜集到的信息，合理推断学校的潜在需求
+- 基于领导履历和公开信息，推断其管理风格和关注点
+- 所有推断必须标注"[推断]"并说明依据
+
+【来源标注要求】
 1. 每个信息点必须标注可验证的来源
-2. 优先使用：学校官网、教育部官网、官方新闻稿、权威媒体报道
-3. 来源格式：[来源: 网站名称/URL/日期]
-4. 无法确认的信息必须标注"[来源: 暂无公开信息]"
-
-【需要搜集的内容】
-1. 学校概况（层次、类型、地理位置、办学规模）- 必须标注来源链接
-2. 学科建设情况（优势学科、特色专业）- 必须标注来源链接
-3. 信息化现状（智慧校园建设、已有系统）- 必须标注来源链接
-4. 近期重要动态（新闻、政策、项目）- 必须标注来源链接及时间
-5. 关于"${leaderName}"的公开履历 - 只提供官网公开的信息，附来源链接
+2. 来源格式：<a href="URL" target="_blank">[来源: 网站名称/日期]</a>
+3. 无法确认的信息标注"[来源: 暂无公开信息]"
+4. 推断结论标注"[推断: 基于xxx信息]"
 
 【输出格式】
-请以HTML格式返回，每个部分用<h4>标题</h4>和<p>段落</p>组织。
-来源链接用 <a href="URL" target="_blank" class="text-blue-600 hover:underline">[来源: 名称]</a> 格式标注。
-如果无法找到来源，明确说明"暂无公开信息"。`;
+以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>，列表用<ul><li>。
+重要信息加粗显示，来源链接紧跟信息点后。`;
 
-            const result = await callLLM(prompt, '你是一个严谨的高校信息研究员。你的铁律是：没有来源的信息绝不输出。对于任何无法验证的信息，必须明确标注"暂无公开信息"。你绝不会为了回答完整而编造任何内容。');
+            const result = await callLLM(prompt, '你是一个专业的高校信息研究员。你擅长从多渠道搜集公开信息，包括学校官网、政府采购网、新闻报道、学术会议等。你能够基于公开信息进行合理推断，并严格标注信息来源。你不会为了回答完整而编造信息，但会基于证据进行合理推测。');
             
             if (result) {
-                document.getElementById('school-overview').innerHTML = extractSection(result, '学校概况') || '<p class="text-gray-500">暂无公开信息</p>';
+                document.getElementById('school-overview').innerHTML = extractSection(result, '学校基础概况') || extractSection(result, '学校概况') || '<p class="text-gray-500">暂无公开信息</p>';
                 document.getElementById('discipline-info').innerHTML = extractSection(result, '学科建设') || '<p class="text-gray-500">暂无公开信息</p>';
                 document.getElementById('it-status').innerHTML = extractSection(result, '信息化') || '<p class="text-gray-500">暂无公开信息</p>';
                 document.getElementById('recent-news').innerHTML = extractSection(result, '近期') || '<p class="text-gray-500">暂无公开信息</p>';
@@ -774,7 +811,7 @@
                 document.getElementById('intelligence-loading').style.display = 'none';
                 document.getElementById('intelligence-content').style.display = 'block';
             } else {
-                showApiErrorMessage('intelligence', '情报搜集失败，请检查API配置或稍后重试');
+                showApiErrorMessage('intelligence', '情报搜集失败，请检查API配置或稍后重试', 'generateIntelligence');
             }
         }
 
@@ -797,17 +834,19 @@
             }
         }
 
-        // 显示API错误提示
-        function showApiErrorMessage(section, message) {
+        // 显示API错误提示（带重试按钮）
+        function showApiErrorMessage(section, message, retryFunction) {
             const container = document.getElementById(section + '-loading') || document.getElementById('intelligence-loading');
             if (container) {
+                const retryBtn = retryFunction ? `<button onclick="${retryFunction}()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition mt-4 mr-2"><i class="fas fa-redo mr-2"></i>重新生成</button>` : '';
                 container.innerHTML = `
                     <div class="text-center py-8">
                         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
                         </div>
                         <p class="text-gray-800 font-medium mb-2">${message}</p>
-                        <button onclick="showSettings()" class="text-indigo-600 hover:text-indigo-800 mt-2">
+                        ${retryBtn}
+                        <button onclick="showSettings()" class="text-indigo-600 hover:text-indigo-800 mt-2 block mx-auto">
                             <i class="fas fa-cog mr-1"></i>检查API配置
                         </button>
                     </div>
@@ -830,46 +869,75 @@
             const settings = getApiSettings();
             
             if (settings.key) {
-                const prompt = `基于以下信息，分析这位高校领导的管理风格、决策特点、关注点和沟通偏好。
+                const prompt = `基于公开可查的信息，深度分析${visitData.leader.name}（${getPositionText(visitData.leader.position)}）的领导画像。
 
-【铁律 - 绝对禁止】
-- 严禁臆造领导的任何个人信息（学历、籍贯、家庭、爱好等）
-- 严禁编造领导的管理风格、决策案例、个人言论
-- 严禁编造领导的学术成果、研究方向细节
+【分析对象】
+- 姓名：${visitData.leader.name}
+- 职务：${getPositionText(visitData.leader.position)}
+- 学校：${visitData.school.name}
+- 学术背景：${visitData.leader.background || '未明确'}
+- 拜访目标：${getGoalText(visitData.goal.type)}
 
-【信息来源要求】
-1. 只使用公开可查的信息进行分析
-2. 每个分析结论必须说明是基于什么公开信息得出的
-3. 来源格式：[来源: 网站名称/URL/日期]
-4. 无法验证的信息必须标注"[基于一般性规律推测，无公开信息佐证]"
+【搜索范围】（不限于官网）
+- 学校官网现任领导栏目
+- 百度百科、维基百科等公开资料
+- 新闻报道中的公开活动和讲话
+- 学术会议、行业论坛的公开演讲
+- 期刊论文、学术成果（如有）
+- 社交媒体公开信息（如有）
 
-学校：${visitData.school.name}
-领导姓名：${visitData.leader.name}
-职务：${getPositionText(visitData.leader.position)}
-学术背景：${visitData.leader.background || '未提供'}
-拜访目标：${getGoalText(visitData.goal.type)}
+【分析维度】
 
-请从以下四个维度进行分析，每个维度必须标注信息来源或可信度：
-1. 管理风格（基于职务和公开报道，附来源链接）
-2. 决策特点（基于学校类型和公开决策记录，附来源链接）
-3. 关注点预测（基于当前高校热点和其职务，附来源链接）
-4. 沟通偏好（基于一般性规律，必须标注为"推测"）
+1. 职业履历与背景
+   - 教育背景、学术经历
+   - 职务晋升路径
+   - 分管领域变化
+   - 重要成就和荣誉
+
+2. 管理风格分析（基于公开信息推断）
+   - 决策风格（果断/谨慎/民主）
+   - 工作风格（务实/创新/稳健）
+   - 对外合作态度（开放/保守）
+   - 信息化/数字化转型态度
+
+3. 决策特点（基于公开决策推断）
+   - 决策依据（数据驱动/经验判断/专家意见）
+   - 风险偏好（保守/稳健/激进）
+   - 对新技术/新合作的态度
+   - 典型决策案例分析（如有）
+
+4. 关注点预测（结合职务和高校热点）
+   - 当前工作的重点方向
+   - 可能面临的挑战和压力
+   - 与拜访目标相关的关注点
+   - 近期公开讲话中透露的 priorities
+
+5. 沟通偏好（基于公开信息推断）
+   - 喜欢的沟通方式（正式/非正式）
+   - 关注的信息类型（数据/案例/理念）
+   - 决策前的信息需求
+   - 与供应商/合作方的互动风格
+
+【推断标注要求】
+- 基于明确公开信息的结论：标注<a href="URL">[来源: xxx]</a>
+- 基于多个信息点的合理推断：标注"[推断: 基于xxx、yyy信息]"
+- 基于一般性规律的推测：标注"[推测: 基于高校管理一般规律]"
+- 无法确认的信息：标注"[信息未公开]"
 
 【输出格式】
-返回HTML格式，每个部分用<h4>标题</h4>和具体内容。
-来源链接用 <a href="URL" target="_blank" class="text-blue-600 hover:underline">[来源: 名称]</a> 格式标注。
-对于任何无法验证的信息，明确说明"暂无公开信息"或"基于推测"。`;
+以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
+重要结论加粗，来源链接紧跟结论后。`;
 
-                const result = await callLLM(prompt, '你是一个专业的高校管理研究者。你的核心原则是：没有来源的信息绝不输出。你宁可回答"信息不足无法分析"，也绝不会为了回答完整而编造任何内容。对于推测性内容，你会明确标注。');
+                const result = await callLLM(prompt, '你是一个专业的高校管理研究者和情报分析专家。你擅长从多渠道搜集公开信息（官网、新闻、学术资料、行业报告等），并基于这些信息进行合理推断。你能够区分"已知事实"和"合理推断"，并严格标注信息来源。你不会编造信息，但会基于证据进行有依据的推测。');
                 
                 if (result) {
-                    document.getElementById('management-style').innerHTML = extractSection(result, '管理风格') || '<p class="text-gray-500">暂无公开信息</p>';
+                    document.getElementById('management-style').innerHTML = extractSection(result, '管理风格') || extractSection(result, '职业履历') || '<p class="text-gray-500">暂无公开信息</p>';
                     document.getElementById('decision-style').innerHTML = extractSection(result, '决策特点') || '<p class="text-gray-500">暂无公开信息</p>';
                     document.getElementById('concern-points').innerHTML = extractSection(result, '关注点') || '<p class="text-gray-500">暂无公开信息</p>';
                     document.getElementById('communication-preference').innerHTML = extractSection(result, '沟通偏好') || '<p class="text-gray-500">暂无公开信息</p>';
                     return;
                 } else {
-                    showApiErrorMessage('leader-profile', '领导画像分析失败，请检查API配置');
+                    showApiErrorMessage('leader-profile', '领导画像分析失败，请检查API配置', 'generateLeaderProfile');
                     return;
                 }
             }
@@ -884,23 +952,48 @@
             const goalText = getGoalText(goalType);
 
             if (settings.key) {
-                const prompt = `请为以下高校拜访制定详细的拜访策略：
+                const prompt = `基于前面步骤搜集到的情报和领导画像，制定针对性的拜访策略。
 
+【拜访背景】
 学校：${visitData.school.name}
 领导：${visitData.leader.name}（${getPositionText(visitData.leader.position)}）
 拜访目标：${goalText}
 目标描述：${visitData.goal.description || '无'}
 
-请提供以下内容：
-1. 开场白建议（自然、得体的开场方式）
-2. 话题牵引路径（从开场到核心话题的推进步骤）
-3. 价值呈现方案（突出科大讯飞解决方案的核心价值点）
-4. 可能的问题与应对（至少3个常见异议及回应）
-5. 下一步行动建议（会后的跟进计划）
+【策略制定要求】
 
-返回格式为HTML，每个部分用<h4>标题</h4>和具体内容。`;
+1. 开场白建议
+   - 结合学校近期动态和领导关注点设计开场话题
+   - 体现对学校的了解和尊重
+   - 自然过渡到拜访主题
 
-                const result = await callLLM(prompt, '你是一个资深的B2B销售专家，擅长制定高校客户拜访策略。');
+2. 话题牵引路径
+   - 根据领导管理风格和决策特点设计话题顺序
+   - 每个话题的切入角度和过渡话术
+   - 预期领导的反应和应对
+
+3. 价值呈现方案
+   - 针对学校信息化现状和痛点
+   - 结合科大讯飞的核心优势
+   - 用案例和数据支撑（可合理引用公开案例）
+
+4. 可能的问题与应对
+   - 基于领导决策特点预测可能的异议
+   - 每个异议的回应话术和支撑材料
+   - 遇到阻力时的回旋策略
+
+5. 下一步行动建议
+   - 根据拜访目标设计后续跟进计划
+   - 关键时间节点和里程碑
+   - 需要的内部资源和配合
+
+【输出要求】
+- 策略要具体、可执行，不要泛泛而谈
+- 结合前面搜集到的具体信息
+- 标注需要进一步确认的信息点
+- 以HTML格式返回，每个部分用<h4>标题</h4>`;
+
+                const result = await callLLM(prompt, '你是一个资深的高校客户销售专家。你擅长基于客户情报制定针对性的拜访策略，能够结合客户的具体情况设计话术和应对方案。你的策略具体、可执行，不是模板化的内容。');
                 
                 if (result) {
                     document.getElementById('opening-suggestion').innerHTML = extractSection(result, '开场白') || '<p class="text-gray-500">请重试生成</p>';
@@ -910,7 +1003,7 @@
                     document.getElementById('next-actions').innerHTML = extractSection(result, '下一步') || '<p class="text-gray-500">请重试生成</p>';
                     return;
                 } else {
-                    showApiErrorMessage('strategy', '策略生成失败，请检查API配置');
+                    showApiErrorMessage('strategy', '策略生成失败，请检查API配置', 'generateStrategy');
                     return;
                 }
             }
@@ -937,18 +1030,29 @@
             const settings = getApiSettings();
             
             if (settings.key) {
-                // 使用真实API扮演领导
-                const context = `你正在扮演一位高校领导，与科大讯飞销售进行对话。
+                // 使用真实API扮演领导，人设基于前面搜集的信息
+                const context = `你正在扮演${visitData.leader.name}，${visitData.school.name}的${getPositionText(visitData.leader.position)}。
 
-你的角色设定：
-- 姓名：${visitData.leader.name}
+【角色设定基础】
 - 职务：${getPositionText(visitData.leader.position)}
 - 学校：${visitData.school.name}
-- 性格：务实、关注ROI、对新技术持谨慎开放态度
+- 拜访目标：${getGoalText(visitData.goal.type)}
 
-对话场景：${getGoalText(visitData.goal.type)}
+【人设特点】（基于前面步骤分析得出）
+- 管理风格：务实、关注实际效果
+- 决策特点：谨慎但开放，重视数据和案例
+- 关注点：学校信息化建设的实际价值、投入产出比
+- 沟通偏好：直接、简洁，不喜欢空话套话
 
-请根据以上设定，以这位领导的口吻回复。回复要简洁、符合领导身份，可以提出质疑、询问细节或表达兴趣。`;
+【对话要求】
+- 用自然、口语化的中文回复，不要像AI
+- 可以适当使用停顿词（嗯、那个、这个）
+- 根据对方的话术做出真实反应，可以质疑、追问或表达兴趣
+- 不要一次性说出所有想法，逐步展开
+- 可以主动询问关心的具体问题
+
+【场景】
+科大讯飞的销售人员正在拜访你，讨论${getGoalText(visitData.goal.type)}相关事宜。请以这位领导的身份自然回应。`;
 
                 const result = await callLLM(message, context);
                 if (result) {
