@@ -724,7 +724,37 @@
             nextStep();
         }
 
-        // 生成情报（强制使用API）
+        // 搜索函数（使用 BrightData Serp API）
+        async function searchWeb(query) {
+            const apiKey = '6a308d3a-684a-45d0-8004-84e9f038a388';
+            const encodedQuery = encodeURIComponent(query);
+            const url = `https://www.google.com/search?q=${encodedQuery}`;
+            
+            try {
+                const response = await fetch('https://api.brightdata.com/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        zone: 'serp_api1',
+                        url: url,
+                        format: 'raw'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.organic || [];
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+            return [];
+        }
+
+        // 生成情报（强制使用API，带搜索）
         async function generateIntelligence() {
             document.getElementById('intelligence-loading').style.display = 'block';
             document.getElementById('intelligence-content').style.display = 'none';
@@ -741,66 +771,94 @@
                 return;
             }
 
-            const prompt = `请基于公开可查的信息，全面搜集并整理关于"${schoolName}"的客观信息，特别关注与拜访目标相关的信息。
+            // 显示搜索进度
+            const loadingContainer = document.getElementById('intelligence-loading');
+            loadingContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4 loading-pulse">
+                        <i class="fas fa-search text-2xl text-white"></i>
+                    </div>
+                    <p class="text-gray-600 mb-2">正在搜索相关信息...</p>
+                    <div class="text-sm text-gray-500" id="search-status">准备搜索</div>
+                </div>
+            `;
+
+            // 执行多个搜索
+            const searchQueries = [
+                `${schoolName} ${leaderName} ${leaderPosition} 履历`,
+                `${schoolName} 信息化 智慧校园 招标`,
+                `${schoolName} 近期新闻 2024`,
+                `${leaderName} 公开讲话 活动`,
+                `${schoolName} ${visitGoal} 合作`
+            ];
+
+            let allSearchResults = [];
+            for (let i = 0; i < searchQueries.length; i++) {
+                document.getElementById('search-status').textContent = `搜索: ${searchQueries[i]}...`;
+                const results = await searchWeb(searchQueries[i]);
+                allSearchResults = allSearchResults.concat(results);
+                // 延迟避免请求过快
+                if (i < searchQueries.length - 1) await new Promise(r => setTimeout(r, 1000));
+            }
+
+            // 格式化搜索结果
+            const searchContext = allSearchResults.slice(0, 15).map(r => 
+                `[${r.title}]\n${r.description}\n来源: ${r.link}`
+            ).join('\n\n');
+
+            document.getElementById('search-status').textContent = '正在分析搜索结果...';
+
+            const prompt = `基于以下实时搜索到的信息，整理关于"${schoolName}"和"${leaderName}"的客观情报。
+
+【实时搜索结果】
+${searchContext}
 
 【拜访背景】
 - 拜访对象：${leaderName}（${leaderPosition}）
 - 拜访目标：${visitGoal}
 - 目标描述：${goalDesc}
 
-【信息搜集维度】
+【信息整理维度】
 
 1. 学校基础概况
    - 学校层次、类型、隶属关系
    - 地理位置、校区分布
    - 办学规模（师生人数、学院数量）
    - 历史沿革、办学特色
-   - 近期发展规划
 
 2. 学科建设情况
    - 双一流建设学科
    - 国家重点学科、特色专业
-   - 学科评估结果
-   - 与科大讯飞业务相关的学科（如计算机、人工智能、教育技术）
+   - 与科大讯飞业务相关的学科
 
-3. 信息化现状（重点搜集近1-2年信息）
-   - 智慧校园建设整体规划
-   - 已建成的信息化系统
-   - 近1年的信息化建设招标信息（中国政府采购网、学校采购网）
-   - 现有合作伙伴（已合作的科技企业）
-   - 信息化投入预算规模
+3. 信息化现状
+   - 智慧校园建设情况
+   - 信息化建设招标信息
+   - 现有合作伙伴
    - 存在的痛点和需求
 
-4. 近期重要动态（近6个月）
-   - 学校官网新闻中与信息化、教学、科研相关的动态
-   - 校领导公开讲话、会议报道
-   - 与${leaderName}相关的公开活动和讲话
+4. 近期重要动态
+   - 学校近期新闻（近6个月）
+   - 与${leaderName}相关的公开活动
    - 与拜访目标相关的政策、项目、合作
-   - 学校近期重大事件（校庆、评估、合作签约等）
 
-5. 领导履历与背景（扩大搜索范围）
+5. 领导履历与背景
    - ${leaderName}的职务履历
    - 学术背景、研究方向
    - 公开的管理理念、讲话观点
    - 近期参与的公开活动
-   - 来源不限于官网，可包括：新闻报道、学术会议、行业论坛等
-
-【推断与结论】
-- 基于搜集到的信息，合理推断学校的潜在需求
-- 基于领导履历和公开信息，推断其管理风格和关注点
-- 所有推断必须标注"[推断]"并说明依据
 
 【来源标注要求】
-1. 每个信息点必须标注可验证的来源
-2. 来源格式：<a href="URL" target="_blank">[来源: 网站名称/日期]</a>
-3. 无法确认的信息标注"[来源: 暂无公开信息]"
-4. 推断结论标注"[推断: 基于xxx信息]"
+1. 每个信息点必须标注来源链接
+2. 来源格式：<a href="URL" target="_blank">[来源: 网站名称]</a>
+3. 基于搜索结果合理推断的内容标注"[推断: 基于xxx信息]"
+4. 无法确认的信息标注"[来源: 暂无公开信息]"
 
 【输出格式】
-以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>，列表用<ul><li>。
-重要信息加粗显示，来源链接紧跟信息点后。`;
+以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
+重要信息加粗，来源链接紧跟信息点后。`;
 
-            const result = await callLLM(prompt, '你是一个专业的高校信息研究员。你擅长从多渠道搜集公开信息，包括学校官网、政府采购网、新闻报道、学术会议等。你能够基于公开信息进行合理推断，并严格标注信息来源。你不会为了回答完整而编造信息，但会基于证据进行合理推测。');
+            const result = await callLLM(prompt, '你是一个专业的高校信息研究员。你擅长基于实时搜索到的信息整理情报，能够区分"已知事实"和"合理推断"，并严格标注信息来源。');
             
             if (result) {
                 document.getElementById('school-overview').innerHTML = extractSection(result, '学校基础概况') || extractSection(result, '学校概况') || '<p class="text-gray-500">暂无公开信息</p>';
@@ -864,12 +922,47 @@
             generateIntelligence();
         }
 
-        // 生成领导画像（支持API）
+        // 生成领导画像（支持API，带搜索）
         async function generateLeaderProfile() {
             const settings = getApiSettings();
             
             if (settings.key) {
-                const prompt = `基于公开可查的信息，深度分析${visitData.leader.name}（${getPositionText(visitData.leader.position)}）的领导画像。
+                // 显示搜索进度
+                const loadingContainer = document.getElementById('leader-profile-loading') || document.getElementById('step-3');
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'leader-search-status';
+                statusDiv.className = 'text-center py-4';
+                statusDiv.innerHTML = `
+                    <div class="w-12 h-12 gradient-bg rounded-full flex items-center justify-center mx-auto mb-2 loading-pulse">
+                        <i class="fas fa-user-tie text-xl text-white"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">正在搜索领导公开信息...</p>
+                `;
+                
+                // 搜索领导信息
+                const searchQueries = [
+                    `${visitData.leader.name} ${visitData.school.name} 履历`,
+                    `${visitData.leader.name} 公开讲话 观点`,
+                    `${visitData.leader.name} 管理风格 教育理念`,
+                    `${visitData.leader.name} 近期活动 2024`
+                ];
+
+                let allSearchResults = [];
+                for (let i = 0; i < searchQueries.length; i++) {
+                    const results = await searchWeb(searchQueries[i]);
+                    allSearchResults = allSearchResults.concat(results);
+                    if (i < searchQueries.length - 1) await new Promise(r => setTimeout(r, 1000));
+                }
+
+                // 格式化搜索结果
+                const searchContext = allSearchResults.slice(0, 15).map(r => 
+                    `[${r.title}]\n${r.description}\n来源: ${r.link}`
+                ).join('\n\n');
+
+                const prompt = `基于以下实时搜索到的信息，深度分析${visitData.leader.name}的领导画像。
+
+【实时搜索结果】
+${searchContext}
 
 【分析对象】
 - 姓名：${visitData.leader.name}
@@ -877,14 +970,6 @@
 - 学校：${visitData.school.name}
 - 学术背景：${visitData.leader.background || '未明确'}
 - 拜访目标：${getGoalText(visitData.goal.type)}
-
-【搜索范围】（不限于官网）
-- 学校官网现任领导栏目
-- 百度百科、维基百科等公开资料
-- 新闻报道中的公开活动和讲话
-- 学术会议、行业论坛的公开演讲
-- 期刊论文、学术成果（如有）
-- 社交媒体公开信息（如有）
 
 【分析维度】
 
@@ -918,7 +1003,7 @@
    - 决策前的信息需求
    - 与供应商/合作方的互动风格
 
-【推断标注要求】
+【来源标注要求】
 - 基于明确公开信息的结论：标注<a href="URL">[来源: xxx]</a>
 - 基于多个信息点的合理推断：标注"[推断: 基于xxx、yyy信息]"
 - 基于一般性规律的推测：标注"[推测: 基于高校管理一般规律]"
@@ -928,7 +1013,7 @@
 以HTML格式返回，每个维度用<h4>标题</h4>，内容用<p>段落</p>或<ul><li>列表。
 重要结论加粗，来源链接紧跟结论后。`;
 
-                const result = await callLLM(prompt, '你是一个专业的高校管理研究者和情报分析专家。你擅长从多渠道搜集公开信息（官网、新闻、学术资料、行业报告等），并基于这些信息进行合理推断。你能够区分"已知事实"和"合理推断"，并严格标注信息来源。你不会编造信息，但会基于证据进行有依据的推测。');
+                const result = await callLLM(prompt, '你是一个专业的高校管理研究者和情报分析专家。你擅长基于实时搜索到的公开信息进行深度分析，能够区分"已知事实"和"合理推断"，并严格标注信息来源。你不会编造信息，但会基于证据进行有依据的推测。');
                 
                 if (result) {
                     document.getElementById('management-style').innerHTML = extractSection(result, '管理风格') || extractSection(result, '职业履历') || '<p class="text-gray-500">暂无公开信息</p>';
